@@ -1,24 +1,37 @@
+"""
+고객 메시지에 적절한 답변을 생성하는데 사용되는 체인들을 정의합니다.
+
+고객 메시지에 답변을 생성하는 체인은 chat_chain으로 크게 세 부분으로 구성됩니다.
+1.chat_status_chain: 대화 진행 여부를 분류하는 체인 | 2.chat_chain: 대화가 계속 진행될 것 같은 경우에 답변을 생성하는 체인 | 3.chat_end_chain: 대화가 끝날 것 같은 경우에 답변을 생성하는 체인
+
+대화가 계속 진행될 것 같은 경우에 답변을 생성하는 체인(chat_chain)이 고객 문의와 주문 관련 요청을 처리하는 체인으로 크게 두 부분으로 구성됩니다.
+2-1.response_chain: <현재 고객 메시지>가 일반 문의에 해당하는 경우 답변을 생성하는 체인 | 2-2.handle_request_chain: <현재 고객 메시지>가 요청 문의에 해당하는 경우 답변을 생성하는 체인
+
+일반 문의에 답변을 생성하는 체인(response_chain)은 inquiry_classifier_chain에서 문의 유형을 분류한 후 inquiry_type_branch로 유형에 맞는 chain을 선택해 답변을 생성합니다.
+inquiry_type_branch에 연결된 각 문의 유형과 대응되는 체인은 general_inquiry_chain, query_inquiry_chain, change_inquiry_chain, cancel_inquiry_chain입니다.
+
+요청 문의에 답변을 생성하는 체인(handle_request_chain)은 request_classifier_chain에서 문의 유형을 분류한 후 request_type_branch로 유형에 맞는 chain을 선택해 답변을 생성합니다.
+request_type_branch에 연결된 각 문의 유형과 대응되는 체인은 order_chain, order_query_chain, order_change_chain, order_cancel_chain입니다.
+
+chat_chain.invoke({'customer_message': 입력 메시지, 'memory': LangChain의 memeory 객체})로 입력 메시지에 대한 답변을 생성합니다.
+"""
+
+
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.schema.runnable import RunnableBranch
 from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 
-from crud import create_order, get_order, update_order, delete_order
-from utils import load_memory, save_conversation, order_record_parser, process_order
+from utils2 import load_memory, save_conversation, order_record_parser
 
 import os
 from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv(), override=True)
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
 MODEL = "gpt-3.5-turbo-0613" # gpt-4-1106-preview", "gpt-3.5-turbo-0613"
-# order_record_parser = order_record_parser() order_record_parser 객체 만들어서 임포트로 수정 후 이 부분 주석 처리 안 한 것과 오류 관련? 
-
-# 반영 못한 부분 - parser, helper function 부분
-
-# 상위 구조가 위로 오게 위치를 바꾸는 게 나을 듯
-# 전체 구조를 처음 주석에서 보여주면 좋을 듯
 
 
 # 대화 진행 여부를 판단하는 체인

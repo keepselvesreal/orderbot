@@ -1,0 +1,6 @@
+# 동작 예시용
+
+langchain
+openai
+python-dotenv
+pydantic
